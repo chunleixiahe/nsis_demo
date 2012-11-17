@@ -1,12 +1,25 @@
-; 访问注册表
+
 Name "uninstall_sql"
 OutFile "uninstall_sql.exe"
 ShowInstDetails show
 
 !include "FileFunc.nsh"
+!include "WordFunc.nsh"
+
 
 ;删除sql相关的服务
 Var serviceName
+
+;杀掉可能正在使用的查询分析器和企业管理器 KillProc不能关闭64位的应用程序!
+Section "kill_ps"
+
+  KillProcDLL::KillProc "isqlw.exe"
+	DetailPrint "关闭查询分析器$R0"
+	KillProcDLL::KillProc "mmc.exe"
+	DetailPrint "关闭企业管理器$R0"
+	
+SectionEnd
+
 Section  "remove_mssql_service"
 
  	StrCpy $serviceName "MSSQLSERVER"

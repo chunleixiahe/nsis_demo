@@ -17,7 +17,7 @@ ReadRegDWORD $0 HKLM "SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName
 
 
 
-DetailPrint "更改前计算机的名字:$0"
+DetailPrint "当前计算机的名字:$0"
 
 ;StrCpy  $0  "zhu-pc"
 
@@ -57,7 +57,9 @@ ReadRegDWORD $0 HKLM "SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName
 
 DetailPrint "更改后计算机的名字:$0"
 
-;系统需要重启
+;系统需要重启；如果选择了false，不进行重启，也会正常进入下一步。但是没有验证是否不重启，仅仅把注册表中涉及到的小写计算机名改成大写后，
+;是否不影响sql2000的安装
+
 
 MessageBox MB_YESNO|MB_ICONQUESTION "需要重启系统，请重启后重新安装本程序。" IDNO +2
   Reboot
@@ -65,8 +67,6 @@ Goto over
 over:
 
 SectionEnd
-
-
 
 
 
