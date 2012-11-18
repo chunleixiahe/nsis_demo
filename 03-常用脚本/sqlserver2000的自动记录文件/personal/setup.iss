@@ -48,7 +48,7 @@ AutoStart=15
 Result=1
 [DlgSQLSecurity-0]
 LoginMode=2
-szPwd=086e783ff3f1206215
+szPwd=102e5cf4b7d197599ac869
 Result=1
 [DlgCollation-0]
 collation_name=Chinese_PRC_CI_AS
