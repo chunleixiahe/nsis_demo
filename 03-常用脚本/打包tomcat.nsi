@@ -4,8 +4,33 @@
 Name "打包tomcat"
 OutFile "打包tomcat.exe"
 ShowInstDetails show
+loadlanguagefile "${NSISDIR}\Contrib\Language files\simpChinese.nlf" ;上一步下一步按钮显示中文
 
 !include "FileFunc.nsh"
+!include "nsDialogs.nsh"
+!include "LogicLib.nsh"
+
+;先显示安装页面
+Page instfiles
+;然后在自定义页面中处理附加数据库
+Page custom nsDialogsPage nsDialogsPageLeave
+
+
+Var Dialog
+Var Label
+
+Var Text
+Var Text_State
+
+;初始化变量
+Function .onInit
+
+	StrCpy $Text_State "请输入sa的密码"
+
+FunctionEnd
+
+
+
 
 Var installroot
 Var hasD
@@ -117,11 +142,58 @@ Section "检查sqlserver是否安装"
 
 SectionEnd
 
+Function nsDialogsPage
+
+	nsDialogs::Create 1018
+	Pop $Dialog
+
+	${If} $Dialog == error
+		Abort
+	${EndIf}
+
+	${NSD_CreateLabel} 0 0 100% 12u "欢迎使用nsDialogs插件!"
+	Pop $Label
+
+	${NSD_CreateText} 0 13u 100% 12u $Text_State
+	Pop $Text
+
+	${NSD_CreateCheckbox} 0 30u 100% 10u "勾选(&S)"
+	Pop $Checkbox
+
+	${If} $Checkbox_State == ${BST_CHECKED}
+		${NSD_Check} $Checkbox
+	${EndIf}
+  nsDialogs::Show
+
+	# 替换上面 ${If}:
+	# ${NSD_SetState} $Checkbox  ${BST_CHECKED}
+
+FunctionEnd
+
+Function nsDialogsPageLeave
+
+	${NSD_GetText} $Text $Text_State
+	${NSD_GetState} $Checkbox $Checkbox_State
+
+	MessageBox MB_OK "$Checkbox_State"
+
+	;验证是否能够连接数据库
+
+
+	connerr:
+	MessageBox MB_OK "输入的密码不正确"
+	Abort
+  connright:
+  Call fetchDB
+	Return
+
+
+FunctionEnd
 
 ;附加数据库的时候如果数据库已经存在了，先分离再附加.(每次打包的时候要求数据库文件名一样bea和pri)
-Section "附加数据库"
+Function "fetchDB"
 
-SectionEnd
+FunctionEnd
 
 
 

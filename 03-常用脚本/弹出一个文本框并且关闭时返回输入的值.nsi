@@ -18,9 +18,10 @@ Var Text_State
 Var Checkbox
 Var Checkbox_State
 
-Page custom nsDialogsPage nsDialogsPageLeave
 
+Page custom nsDialogsPage nsDialogsPageLeave
 Page instfiles
+
 
 Function .onInit
 
@@ -84,7 +85,5 @@ Section
 	DetailPrint "WwW.Dremas8.CoM"
 	DetailPrint "框内文字:$Text_State"
 	DetailPrint "勾选情况:$Checkbox_State"
-  
- 
 
 SectionEnd

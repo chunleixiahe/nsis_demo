@@ -65,55 +65,15 @@ DetailPrint $0
 Pop $0
 DetailPrint $0
 ${OLEDB}::SQL_Execute   "$SQLQUERY"
+${OLEDB}::SQL_GetRow
 Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_GetError
-Pop $0
-DetailPrint $0
 Pop $0
 DetailPrint $0
 ${OLEDB}::SQL_GetRow
 Pop $0
-DetailPrint $0
 Pop $0
 DetailPrint $0
-${OLEDB}::SQL_GetRow
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_GetError
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_ExecuteScript   "$PLUGINSDIR\test.sql"
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_GetError
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_GetRow
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_GetRow
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
-${OLEDB}::SQL_GetError
-Pop $0
-DetailPrint $0
-Pop $0
-DetailPrint $0
+
 ${OLEDB}::SQL_Logout
 SectionEnd
 
