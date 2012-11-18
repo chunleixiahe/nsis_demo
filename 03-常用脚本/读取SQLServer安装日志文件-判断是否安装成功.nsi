@@ -11,12 +11,16 @@ ShowInstDetails show
 
 Var lastLineContent
 Var log_name
+Var log_result
 Section "checkSQLSetup_Status"
+  StrCpy $log_result "fail"
+  
 	StrCpy $log_name "sqlstp"
 	Call "readlog"
 	
 	StrCpy $log_name "sqlsp"
 	Call "readlog"
+	
 SectionEnd
 
 Function  readlog
@@ -40,16 +44,18 @@ Function  readlog
 		StrCmp $R0 "$lastLineContent" notfound found        ; error?
 		found:
     DetailPrint "$log_name安装成功"
+  	StrCpy $log_result "success"
 		Return
 		notfound:
 		DetailPrint "$log_name安装失败"
+		StrCpy $log_result "fail"
 		Return
 
 		noexist:
 		DetailPrint "$log_name.log日志不存在不能确定是否安装成功"
-		Return
-
-		;Abort "执行完毕"
+		StrCpy $log_result "fail"
+		Abort "执行完毕"
+ 		Return
 FunctionEnd
 
 
