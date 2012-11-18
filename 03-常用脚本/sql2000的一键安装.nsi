@@ -423,11 +423,6 @@ SectionEnd
 
 Function  start_service
 
-	SimpleSC::ExistsService $serviceName
-  Pop $0
-
-	IntCmp $0 0 is0 lessthan0 morethan0
-	is0:
 	  ;DetailPrint "$serviceName服务存在"
 
 		;检查当前的服务的状态
@@ -437,12 +432,10 @@ Function  start_service
     is000:
 		;DetailPrint "$serviceName查询服务状态:成功"
 		Goto getStatus
- 		lessthan000:
-		;DetailPrint "$serviceName查询服务状态:失败"
-		Goto done
+  	lessthan000:
+    Return
 		morethan000:
-		;DetailPrint "$serviceName查询服务状态:失败"
-    Goto done
+		Return
 		getStatus:
 	  Pop $1
 	  IntCmp $1 4 isRuning  noRuning
@@ -462,7 +455,8 @@ Function  start_service
     Return
     other00:
     DetailPrint "$serviceName启动失败"
-    
+    Return
+
 FunctionEnd
 
 
