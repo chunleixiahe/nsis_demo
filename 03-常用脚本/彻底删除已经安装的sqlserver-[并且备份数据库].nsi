@@ -17,6 +17,8 @@ Section "kill_ps"
 	DetailPrint "关闭查询分析器$R0"
 	KillProcDLL::KillProc "mmc.exe"
 	DetailPrint "关闭企业管理器$R0"
+	KillProcDLL::KillProc "sqlmangr.exe"
+	DetailPrint "关闭服务管理器$R0"
 	
 SectionEnd
 
