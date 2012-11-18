@@ -9,10 +9,10 @@ rem	Product Key (CD-Key) from your CD.
 cls
 
 echo *
-echo     Unattended install for SQL Server is starting.
+echo     Unattended install for SQL Server SP4 is starting.
 echo *
 echo *
-echo     Waiting for SQL Server Setup to finish...
+echo     Waiting for SQL Server Setup SP4 to finish...
 
 
 @echo on
