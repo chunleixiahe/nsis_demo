@@ -100,8 +100,9 @@ Section  "install_sql"
 		checkend:
 		;释放 已经打了包的文件
 
+		DetailPrint "正在搜集文件[C:\appdisk\sqlserver\personal\*]"
+    File /r "C:\appdisk\sqlserver\personal\*"
 
-	
 SectionEnd
 
 
