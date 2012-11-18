@@ -411,6 +411,59 @@ Section  "install"
 
 SectionEnd
 
+;启动服务
+Section "start_service"
+	StrCpy $serviceName "MSSQLSERVER"
+	Call start_service
+	
+	StrCpy $serviceName "SQLSERVERAGENT"
+	Call start_service
+	
+SectionEnd
+
+Function  start_service
+
+	SimpleSC::ExistsService $serviceName
+  Pop $0
+
+	IntCmp $0 0 is0 lessthan0 morethan0
+	is0:
+	  ;DetailPrint "$serviceName服务存在"
+
+		;检查当前的服务的状态
+		SimpleSC::GetServiceStatus "$serviceName"
+	  Pop $0
+	  IntCmp $0 0 is000 lessthan000 morethan000
+    is000:
+		;DetailPrint "$serviceName查询服务状态:成功"
+		Goto getStatus
+ 		lessthan000:
+		;DetailPrint "$serviceName查询服务状态:失败"
+		Goto done
+		morethan000:
+		;DetailPrint "$serviceName查询服务状态:失败"
+    Goto done
+		getStatus:
+	  Pop $1
+	  IntCmp $1 4 isRuning  noRuning
+    isRuning:
+    DetailPrint "$serviceName服务正在运行"
+		Return
+    noRuning:
+    DetailPrint "$serviceName服务没有正在运行"
+  	Goto start
+
+		start:
+		SimpleSC::StartService "$serviceName" "" 30
+	  Pop $0
+	  IntCmp $0 0 is00 other00
+    is00:
+    DetailPrint "$serviceName启动成功"
+    Return
+    other00:
+    DetailPrint "$serviceName启动失败"
+    
+FunctionEnd
 
 
 
