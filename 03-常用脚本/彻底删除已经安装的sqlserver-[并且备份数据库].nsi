@@ -66,7 +66,7 @@ Section "remove_mssql_folder"
 	Goto over
 	noerr:
 	DetailPrint "没有发生错误"
-	MessageBox MB_OK "文件夹已经删除完整\n数据库文件已经备份到$8\sqldata_bak_$2_$1_$0_$4_$5_$6"
+	MessageBox MB_OK "文件夹已经删除完整$\n数据库文件已经备份到$\n\sqldata_bak_$2_$1_$0_$4_$5_$6"
 	Goto over
 	over:
 
