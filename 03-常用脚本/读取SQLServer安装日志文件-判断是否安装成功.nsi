@@ -18,8 +18,8 @@ Section "checkSQLSetup_Status"
 	StrCpy $log_name "sqlstp"
 	Call "readlog"
 	
-	StrCpy $log_name "sqlsp"
-	Call "readlog"
+	;StrCpy $log_name "sqlsp"
+	;Call "readlog"
 	
 SectionEnd
 
@@ -35,7 +35,8 @@ Function  readlog
     exist:
 		;DetailPrint "$log_name.log安装日志存在"
 
-		${LineFind} "$0" "" -1 "readlastline"
+		${LineRead} "$0" "-1" $R0
+    StrCpy $lastLineContent $R0
 
 		StrCpy $lastLineContent $lastLineContent 24 -24
 
@@ -58,24 +59,6 @@ Function  readlog
  		Return
 FunctionEnd
 
-
-Function "readlastline"
-	; $9       current line
-	; $8       current line number
-	; $7       current line negative number
-
-	; $R0-$R9  are not used (save data in them).
-	; ...
-	
-	;当前行内容
-	;DetailPrint $9
-	StrCpy $lastLineContent $R9
-	;当前行数
-	;DetailPrint $R8
-	
-	Push $var ; If $var="StopFileReadFromEnd"  Then exit from function
-
-FunctionEnd
 
 
 

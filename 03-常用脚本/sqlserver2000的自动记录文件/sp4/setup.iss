@@ -42,9 +42,8 @@ Result=1
 [DlgUpgrade-0]
 Result=1
 [ServerConnect-0]
-NTAuthentication=0
-SQLAuthentication=1
-svPassword=' '
+NTAuthentication=1
+SQLAuthentication=0
 Result=1
 [SdBlankPwdWarningDlg-0]
 AllowBlank=0

@@ -19,6 +19,8 @@ Section "kill_ps"
 	DetailPrint "关闭企业管理器$R0"
 	KillProcDLL::KillProc "sqlmangr.exe"
 	DetailPrint "关闭服务管理器$R0"
+		KillProcDLL::KillProc "setupsql.exe"
+	DetailPrint "关闭正在安装的进程$R0"
 	
 SectionEnd
 

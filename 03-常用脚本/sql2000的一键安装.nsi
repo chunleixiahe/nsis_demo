@@ -461,7 +461,6 @@ FunctionEnd
 
 
 
-
 Function  readlog
 
 		StrCpy  $0 "$WINDIR\$log_name.log"
@@ -474,8 +473,9 @@ Function  readlog
     exist:
 		;DetailPrint "$log_name.log安装日志存在"
 
-		${LineFind} "$0" "" -1 "readlastline"
-
+		${LineRead} "$0" "-1" $R0
+    StrCpy $lastLineContent $R0
+    
 		StrCpy $lastLineContent $lastLineContent 24 -24
 
 		${WordFind} "$lastLineContent" "Installation Succeeded" "+1{" $R0
@@ -498,23 +498,6 @@ Function  readlog
 FunctionEnd
 
 
-Function "readlastline"
-	; $9       current line
-	; $8       current line number
-	; $7       current line negative number
-
-	; $R0-$R9  are not used (save data in them).
-	; ...
-
-	;当前行内容
-	;DetailPrint $9
-	StrCpy $lastLineContent $R9
-	;当前行数
-	;DetailPrint $R8
-
-	Push $var ; If $var="StopFileReadFromEnd"  Then exit from function
-
-FunctionEnd
 
 
 
