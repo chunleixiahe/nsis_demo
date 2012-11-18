@@ -12,15 +12,38 @@ ShowInstDetails show
 !include "FileFunc.nsh"
 !include "WordFunc.nsh"
 
+
+Var  has
+Section "readReg"
+
+	 	ReadRegDWORD $0 HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft SQL Server 2000" InstallLocation
+		StrLen $1 $0
+		IntCmp  $1 0  not has
+    has:
+		StrCpy $has "true"
+ 		Return
+		not:
+    ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft SQL Server 2000" InstallLocation
+		StrLen $1 $0
+		IntCmp  $1 0 not0 has0
+		has0:
+		StrCpy $has "true"
+		Goto end0
+		not0:
+		StrCpy $has "false"
+		Goto end0
+		end0:
+SectionEnd
+
+
+
+
 Var serviceName
 Section "checksql_Status"
   
 	;检查是否安装了SQL Server
-	StrCpy $serviceName "MSSQLSERVER"
-  SimpleSC::ExistsService $serviceName
-  Pop $0
 
-	IntCmp $0 0 is0 other0
+	StrCmp $has "true" is0 other0
 	is0:
 	  DetailPrint "已经安装了SQL Server"
 	  Abort "程序退出"
@@ -65,21 +88,28 @@ SectionEnd
 
 ;上面主要做了，有服务的情况下启动服务
 Section  "install_sql"
-		SimpleSC::ExistsService "$serviceName"
-	  Pop $0
 
-		IntCmp $0 0 is0 other0
+		StrCmp $has "true" is0 other0
 		is0:
-		  ;DetailPrint "已经安装了SQL Server"
-    Goto checkend
+		  DetailPrint "已经安装了SQL Server"
+		  Abort "程序退出"
+	  Goto checkend
 	  other0:
-
-		;释放 已经打了包的文件
-
+	    ;DetailPrint "还没有安装SQL Server"
 	  Goto checkend
 		checkend:
+		;释放 已经打了包的文件
+
+
 	
 SectionEnd
+
+
+
+
+
+
+
 
 
 

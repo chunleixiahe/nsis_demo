@@ -68,6 +68,10 @@ Section "remove_mssql_folder"
 
 	;删除文件夹 $9 "C:\Program Files (x86)\Microsoft SQL Server\"
  	RMDir /r /REBOOTOK $9
+ 	
+ 	Delete $WINDIR\sqlstp.log
+  Delete $WINDIR\sqlsp.log
+  
 SectionEnd
 
 ;删除mssql相关的注册表信息
