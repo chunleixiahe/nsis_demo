@@ -2,8 +2,8 @@
 
 ;不仅仅是打包tomcat，还有jdk，还有javarebel
 
-Name "打包tomcat"
-OutFile "打包tomcat.exe"
+Name "安装美容连锁软件"
+OutFile "安装美容连锁软件.exe"
 ShowInstDetails show
 loadlanguagefile "${NSISDIR}\Contrib\Language files\simpChinese.nlf" ;上一步下一步按钮显示中文
 
@@ -13,12 +13,31 @@ loadlanguagefile "${NSISDIR}\Contrib\Language files\simpChinese.nlf" ;上一步下一
 !include "OLEDB.NSH"
 !include "WordFunc.nsh"
 
+;定义常量
+!define PRODUCT_NAME "美联美容连锁软件"
+!define PRODUCT_VERSION "2012"
+!define PRODUCT_PUBLISHER "北京和展科技有限责任公司"
+!define PRODUCT_WEB_SITE "http://www.comdev.cn"
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define PRODUCT_UNINST_ROOT_KEY "HKLM"  ;HKEY_LOCAL_MACHINE   HKLM是简写
+
+!define MUI_ABORTWARNING
+!define MUI_ICON "c:\appdisk\config\sys.ico"
+!define MUI_UNICON "c:\appdisk\config\sys.ico"
+!define MUI_WELCOMEPAGE_TITLE "$\r$\n 美联 V2012"
+!define MUI_WELCOMEPAGE_TEXT "  美联 V2012（以下简称KMS-2010）是北京和展科技有限责任公司推出的整体解决方案。$\r$\n$\r$\n 技术先进、操作简便。$\r$\n$\r$\n　　$_CLICK"
+!define MUI_FINISHPAGE_TEXT "安装成功！$\r$\n欢迎使用！$_CLICK"
+
+
 ;然后在自定义页面中处理附加数据库
 Page custom nsDialogsPage nsDialogsPageLeave
 
 ;先显示安装页面
 Page instfiles
 
+; 卸载页面
+UninstPage uninstConfirm
+UninstPage instfiles
 
 
 Var Dialog
@@ -62,12 +81,16 @@ Section  "设置tomcat的安装目录"
 SectionEnd
 
 Section "释放tomcat文件夹"
-
   ;准备文件
 	SetOutPath "$installroot\tomcat\"   ;释放到哪里去
 
 	File /r "C:\appdisk\tomcat\*"   ;从哪里搜集
 	DetailPrint "tomcat安装完毕"
+	
+	;准备配置文件
+	
+	SetOutPath "$installroot\config\"   ;释放到哪里去
+	File /r "C:\appdisk\config\*"   ;从哪里搜集
 
 SectionEnd
 
@@ -338,7 +361,7 @@ FunctionEnd
 
 
 Function "fetch_end"
-	MessageBox MB_OK "附加数据库完毕$\nbea附加结果:$bea_result $\n pri附加结果:$pri_result"
+	MessageBox MB_OK "附加数据库完毕$\nbea附加结果:$bea_result $\npri附加结果:$pri_result"
 	;Quit
 FunctionEnd
 
@@ -425,4 +448,80 @@ Function getD
 	StrCpy $0 StopGetDrives
 	Push $0
 FunctionEnd
+
+
+
+
+;//创建快捷方式
+Section -AdditionalIcons
+  SetOutPath   "$installroot\tomcat\bin\"
+  CreateShortCut "$DESKTOP\美联.lnk" "$installroot\tomcat\bin\startup.bat"
+	WriteIniStr "$installroot\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
+  CreateDirectory "$SMPROGRAMS\美联美容连锁软件"
+  SetOutPath   "$installroot\tomcat\bin\"
+  CreateShortCut "$SMPROGRAMS\美联美容连锁软件\美联软件.lnk" "$installroot\tomcat\bin\startup.bat"
+  SetOutPath   "$installroot"
+  ;CreateShortCut "$SMPROGRAMS\美联美容连锁软件\Uninstall.lnk" "$installroot\uninst.exe"
+
+SectionEnd
+
+
+
+
+;//写入注册表系统信息
+Section -Post
+  WriteUninstaller "$installroot\uninst.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+  StrCpy $installroot $INSTDIR
+SectionEnd
+
+;//删除快捷方式
+Section Uninstall
+
+  ;卸载tomcat服务
+  ;ExecWait "service.bat remove hztomcat";不用卸载服务，因为没有安装服务
+
+  ;删除文件夹
+  RMDir /r "$installroot\tomcat\"
+  RMDir /r  "$installroot\config\"
+
+  Delete "$installroot\${PRODUCT_NAME}.url"
+
+  Delete "$SMPROGRAMS\美联美容连锁软件\Uninstall.lnk"
+  Delete "$SMPROGRAMS\美联美容连锁软件\Tomcat.lnk"
+
+  RMDir /r  "$SMPROGRAMS\美联美容连锁软件"
+  DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
+  
+	DetailPrint "删除完成"
+  Sleep 5000
+  
+  SetAutoClose true
+
+SectionEnd
+
+
+;;///////////    以下是卸载信息   /////////////////////////
+;//confirm 1
+Function un.onUninstSuccess
+  HideWindow
+  MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) 已成功地从你的计算机移除。"
+FunctionEnd
+
+;//confirm 2
+Function un.onInit
+  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "你确实要完全移除 $(^Name) ，其及所有的组件？ 移除后，所有数据和文件都将删除。$\r$\n 请确认是否进行该操作？" IDYES NoAbort
+	Abort
+	NoAbort:
+FunctionEnd
+
+
+
+
+
+
 
