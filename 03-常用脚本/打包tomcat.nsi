@@ -9,11 +9,15 @@ loadlanguagefile "${NSISDIR}\Contrib\Language files\simpChinese.nlf" ;上一步下一
 !include "FileFunc.nsh"
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
+!include "OLEDB.NSH"
+!include "WordFunc.nsh"
+
+;然后在自定义页面中处理附加数据库
+Page custom nsDialogsPage nsDialogsPageLeave
 
 ;先显示安装页面
 Page instfiles
-;然后在自定义页面中处理附加数据库
-Page custom nsDialogsPage nsDialogsPageLeave
+
 
 
 Var Dialog
@@ -53,6 +57,7 @@ Section  "设置tomcat的安装目录"
 	no:
 	StrCpy $installroot "$installroot\meilian\"
 	Return
+	
 SectionEnd
 
 Section "释放tomcat文件夹"
@@ -62,20 +67,32 @@ Section "释放tomcat文件夹"
 
 	File /r "C:\appdisk\tomcat\*"   ;从哪里搜集
 	DetailPrint "tomcat安装完毕"
-	
+
 SectionEnd
 
+Var  has
 Section "释放数据库文件夹"
+	SetOverwrite "try"
   ;准备文件
 	SetOutPath "$installroot\db\"   ;释放到哪里去
 	File /r "C:\appdisk\db\*"   ;从哪里搜集
 	DetailPrint "db文件夹释放完毕"
+	
+	Call readReg
+	StrCmp $has "false" no yes
+	no:
+		
+		MessageBox MB_OK  "tomcat安装完毕，但是还没有安装SQL Server$\n请安装SQL Server后手动附加数据库"
+		Abort "没有安装SQL Server 2000"
+	yes:
+	  DetailPrint "已经安装了SQL Server 2000"
+		Call StartSQLServer ;如果没有启动服务就启动
+		;到这里已经完成了安装页面，开始弹出输入密码页面
 SectionEnd
 
-Var  has
-;设置变量has，表明是否已经安装了SQL Server
-Section "readReg"
 
+;设置变量has，表明是否已经安装了SQL Server
+Function "readReg"
 	 	ReadRegDWORD $0 HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft SQL Server 2000" InstallLocation
 		StrLen $1 $0
 		IntCmp  $1 0  not has
@@ -93,26 +110,25 @@ Section "readReg"
 		StrCpy $has "false"
 		Goto end0
 		end0:
-SectionEnd
+FunctionEnd
 
+;如果已经安装了SQL Server 2000，检查是否启动了，如果没有启动就启动。
 Var serviceName
-Section "检查sqlserver是否安装"
-	;检查是否安装了SQL Server
+Function "startSQLServer"
 	StrCpy $serviceName "MSSQLSERVER"
 	StrCmp $has "true" is0 other0
 	is0:
-	  DetailPrint "已经安装了SQL Server"
+	  ;DetailPrint "已经安装了SQL Server"
   Goto checkend
   other0:
-    DetailPrint "还没有安装SQL Server"
+    ;DetailPrint "还没有安装SQL Server"
     MessageBox MB_OK  "tomcat安装完毕，但是还没有安装SQL Server$\n请安装SQL Server后手动附加数据库"
     Abort "程序退出"
   Goto checkend
 	checkend:
 	;检查是否安装了SQL Server end
 
-	StrCmp $R0  10  hasExist  noExist
-	hasExist:
+
 	SimpleSC::GetServiceStatus "$serviceName"
 	  Pop $1
 	  IntCmp $1 4 isRuning  noRuning
@@ -130,17 +146,204 @@ Section "检查sqlserver是否安装"
     Goto checkend0
     otherRunover:
     DetailPrint "$serviceName服务启动失败"
+		MessageBox MB_OK "服务启动失败"
+		Abort
     Goto checkend0
-
-	Goto checkend0
-
-	noExist:
-
-	;进入下面的Section执行安装
-	Goto checkend0
 	checkend0:
 
-SectionEnd
+	;开始安装
+	Call fetch_begin
+	
+FunctionEnd
+
+
+Var  bea_result
+Var  pri_result
+
+;打开数据库连接
+Var  openresult
+Function "openConn"
+  ;$Text_State 密码
+    ;连接数据库
+	${OLEDB}::SQL_Logon  "localhost"  "sa" "$Text_State" ;"0" Success, "1" Failure
+  ;查询
+	Pop $0
+	
+	DetailPrint "登陆结果:$0"
+	StrCmp $0 "0" OK WRONG
+	OK:
+	DetailPrint "连接成功"
+	StrCpy $openresult "true"
+	Return
+	WRONG:
+	DetailPrint "连接失败"
+	StrCpy $openresult "false"
+	Return
+FunctionEnd
+
+Function "fetch_begin"
+	Call openConn
+	StrCpy $openresult "false"
+	StrCpy $bea_result "false"
+	StrCpy $pri_result "false"
+	
+  ;连接数据库
+	${OLEDB}::SQL_Logon  "localhost"  "sa" "$Text_State" ;"0" Success, "1" Failure
+  ;查询
+	Pop $0
+	
+	DetailPrint "登陆结果：$0"
+
+	;判断是否等于0，如果等于0就是登陆失败
+	StrCmp $0 "0" OK WRONG
+	OK:
+	DetailPrint "登陆成功"
+	Call fetch_bea
+	DetailPrint "$\n$\n"
+	Call fetch_pri
+	DetailPrint "$\n$\n"
+	Return
+	WRONG:
+	DetailPrint "登陆失败"
+	MessageBox MB_OK "连接数据库失败，退出"
+	Abort
+	Return
+FunctionEnd
+
+;附加数据库bea和pri
+
+Function "fetch_bea"
+  ;首先附加$dbname
+	;检查有没有bea数据库，如果有先分离，然后附加。
+  ${OLEDB}::SQL_Execute   "select name from  sysdatabases where  name='bea'" ;执行sql语句
+	Pop $0
+	Pop $0
+	DetailPrint "查询数据库结果$0"
+
+	${OLEDB}::SQL_GetRow ;取得的执行的sql的返回结果  "0" Success, "1" Failure, "2" No more data to read
+	Pop $0
+	Pop $0
+	DetailPrint "查询数据库bea结果$0"
+
+
+	;DetailPrint $0 ;只要大于0就是错误；如果错误，就比表示数据库$dbname不存在
+
+	;==1的时候是失败的情况，没有数据库，否则(0)数据库已经存在   = [!=]
+	StrCmp $0 "bea" existingDBBEA attachDBBEA
+
+	existingDBBEA:
+	DetailPrint "数据库bea已经存在"
+  ;如果bea存在，先分离掉，然后附加新的。
+  ${OLEDB}::SQL_Execute "EXEC sp_detach_db 'bea'"
+	Pop $0
+	DetailPrint $0执行分离数据库操作
+  IntCmp $0 0 success  fail
+	success:
+	DetailPrint  "分离bea成功！"
+	Goto fenliBEAdown
+	fail:
+	DetailPrint  "分离bea失败！"
+	StrCpy $bea_result "false"
+	Return
+	fenliBEAdown:
+
+  attachDBBEA:
+  ClearErrors
+
+	DetailPrint "安装路径:$installroot" ;调试变量
+	;;;;附加bea数据库
+	DetailPrint "正在附加数据库bea..."
+
+
+	${OLEDB}::SQL_Execute   "exec sp_attach_db @dbname = 'bea', @filename1 = N'$installroot\db\bea_Data.MDF',@filename2=N'$installroot\db\bea_Log.LDF'"
+	Pop $0
+  StrCmp $0 '0' attchBEASuccess attchBEAFail
+  attchBEASuccess:
+  DetailPrint "附加数据库bea完成..."
+  StrCpy $bea_result "true"
+	Goto doneBEA
+
+	attchBEAFail:
+  DetailPrint "附加数据库bea失败..."
+  StrCpy $bea_result "false"
+  
+	doneBEA:
+	DetailPrint "$\n$\n"
+FunctionEnd
+
+
+Function "fetch_pri"
+  ;首先附加$dbname
+	;检查有没有bea数据库，如果有先分离，然后附加。
+  ${OLEDB}::SQL_Execute   "select name from  sysdatabases where  name='pri'" ;执行sql语句
+	Pop $0
+	Pop $0
+	DetailPrint "查询数据库结果$0"
+
+	${OLEDB}::SQL_GetRow ;取得的执行的sql的返回结果  "0" Success, "1" Failure, "2" No more data to read
+	Pop $0
+	Pop $0
+	DetailPrint "查询数据库pri结果$0"
+
+
+	;DetailPrint $0 ;只要大于0就是错误；如果错误，就比表示数据库$dbname不存在
+
+	;==1的时候是失败的情况，没有数据库，否则(0)数据库已经存在   = [!=]
+	StrCmp $0 "pri" existingDBBEA attachDBBEA
+
+	existingDBBEA:
+	DetailPrint "数据库pri已经存在"
+  ;如果bea存在，先分离掉，然后附加新的。
+  ${OLEDB}::SQL_Execute "EXEC sp_detach_db 'pri'"
+	Pop $0
+	DetailPrint $0执行分离数据库操作
+  IntCmp $0 0 success  fail
+	success:
+	DetailPrint  "分离pri成功！"
+	Goto fenliBEAdown
+	fail:
+	DetailPrint  "分离pri失败！"
+	StrCpy $pri_result "false"
+	Return
+	fenliBEAdown:
+
+  attachDBBEA:
+  ClearErrors
+
+	DetailPrint "安装路径:$installroot" ;调试变量
+	;;;;附加bea数据库
+	DetailPrint "正在附加数据库pri..."
+
+
+	${OLEDB}::SQL_Execute   "exec sp_attach_db @dbname = 'pri', @filename1 = N'$installroot\db\pri_Data.MDF',@filename2=N'$installroot\db\pri_Log.LDF'"
+	Pop $0
+  StrCmp $0 '0' attchBEASuccess attchBEAFail
+  attchBEASuccess:
+  DetailPrint "附加数据库pri完成..."
+  StrCpy $pri_result "true"
+	Goto doneBEA
+
+	attchBEAFail:
+  DetailPrint "附加数据库pri失败..."
+	StrCpy $pri_result "false"
+
+	doneBEA:
+
+	DetailPrint "$\n$\n"
+	
+	Call fetch_end
+	
+FunctionEnd
+
+
+Function "fetch_end"
+	MessageBox MB_OK "附加数据库完毕$\nbea附加结果:$bea_result $\n pri附加结果:$pri_result"
+	;Quit
+FunctionEnd
+
+
+
+
 
 Function nsDialogsPage
 
@@ -151,18 +354,18 @@ Function nsDialogsPage
 		Abort
 	${EndIf}
 
-	${NSD_CreateLabel} 0 0 100% 12u "欢迎使用nsDialogs插件!"
+	${NSD_CreateLabel} 0 0 100% 12u "输入sa的密码"
 	Pop $Label
 
 	${NSD_CreateText} 0 13u 100% 12u $Text_State
 	Pop $Text
 
-	${NSD_CreateCheckbox} 0 30u 100% 10u "勾选(&S)"
-	Pop $Checkbox
+	;${NSD_CreateCheckbox} 0 30u 100% 10u "勾选(&S)"
+	;Pop $Checkbox
 
-	${If} $Checkbox_State == ${BST_CHECKED}
-		${NSD_Check} $Checkbox
-	${EndIf}
+	;${If} $Checkbox_State == ${BST_CHECKED}
+	;	${NSD_Check} $Checkbox
+	;${EndIf}
   nsDialogs::Show
 
 	# 替换上面 ${If}:
@@ -173,34 +376,28 @@ FunctionEnd
 Function nsDialogsPageLeave
 
 	${NSD_GetText} $Text $Text_State
-	${NSD_GetState} $Checkbox $Checkbox_State
+	;${NSD_GetState} $Checkbox $Checkbox_State
 
-	MessageBox MB_OK "$Checkbox_State"
+	;MessageBox MB_OK "$Text_State"
 
 	;验证是否能够连接数据库
-
-
+  Call OpenConn
+	StrCmp $openresult "true" connright connerr
+	connright:
+  ;Call fetch_begin ;开始附加数据库 ;自动执行安装页面开始附加了
+	Return
 	connerr:
 	MessageBox MB_OK "输入的密码不正确"
 	Abort
-  connright:
-  Call fetchDB
-	Return
-
-
+	
 FunctionEnd
 
 ;附加数据库的时候如果数据库已经存在了，先分离再附加.(每次打包的时候要求数据库文件名一样bea和pri)
-Function "fetchDB"
-
-FunctionEnd
 
 
 
 
-
-
-;验证是否有D盘,将结果设置在全局变量中 $hasD
+;验证是否有D盘,将结果设置在全局变量中 $hasD;用于决定把tomcat释放在哪个目录下
 Function  "hasD"
 	StrCpy $R0 "D:\"      ;Drive letter
 		StrCpy $R1 "invalid"

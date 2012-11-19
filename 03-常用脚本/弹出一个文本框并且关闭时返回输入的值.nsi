@@ -52,7 +52,7 @@ Function nsDialogsPage
 		${NSD_Check} $Checkbox
 	${EndIf}
   nsDialogs::Show
-  
+
 	# 替换上面 ${If}:
 	# ${NSD_SetState} $Checkbox  ${BST_CHECKED}
 
@@ -77,7 +77,7 @@ Function nsDialogsPageLeave
   DetailPrint "勾选了"
   Return
 
-  
+
 FunctionEnd
 
 Section

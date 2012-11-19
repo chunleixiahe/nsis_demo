@@ -10,8 +10,6 @@ ShowInstDetails show
 !include "WordFunc.nsh"
 
 
-
-
 Var dbname
 Var filename_data
 Var filename_log
@@ -33,6 +31,9 @@ Function "release_files"
 	DetailPrint "$\n$\n"
 
 FunctionEnd
+
+
+;设置页面
 
 
 Section "连接数据库"
