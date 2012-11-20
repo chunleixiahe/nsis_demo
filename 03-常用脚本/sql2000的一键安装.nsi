@@ -54,6 +54,7 @@ Section "checksql_Status"
 	
 
 	StrCmp $R0  10  hasExist  noExist
+	
 	hasExist:
 	SimpleSC::GetServiceStatus "$serviceName"
 	  Pop $1

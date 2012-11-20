@@ -49,7 +49,7 @@ Var Text_State
 ;初始化变量
 Function .onInit
 
-	StrCpy $Text_State "请输入sa的密码"
+	StrCpy $Text_State ""
 
 FunctionEnd
 
@@ -63,6 +63,7 @@ Section  "设置tomcat的安装目录"
 
 	StrCpy $hasD "false"
 	
+	Call hasD
   DetailPrint "开始安装tomcat"
 
   StrCpy $installroot $WINDIR 3  ;截取左侧的三个字符  c:\ ;;;;
@@ -70,12 +71,13 @@ Section  "设置tomcat的安装目录"
 
 	;查找有没有D盘，如果有D盘，就使用D盘，否则使用系统所在的根目录。比如c:\meilian\;
 	
-  StrCmp hasD "false"  has no
+  StrCmp $hasD "true"  has no
   has:
   StrCpy $installroot "D:\meilian\"
 	Return
 	no:
 	StrCpy $installroot "$installroot\meilian\"
+	
 	Return
 	
 SectionEnd
@@ -454,18 +456,23 @@ FunctionEnd
 
 ;//创建快捷方式
 Section -AdditionalIcons
-  SetOutPath   "$installroot\tomcat\bin\"
-  CreateShortCut "$DESKTOP\美联.lnk" "$installroot\tomcat\bin\startup.bat"
-	WriteIniStr "$installroot\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
+	DetailPrint  "最终的安装路径:$installroot"
+  WriteIniStr "$installroot\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
   CreateDirectory "$SMPROGRAMS\美联美容连锁软件"
+
   SetOutPath   "$installroot\tomcat\bin\"
-  CreateShortCut "$SMPROGRAMS\美联美容连锁软件\美联软件.lnk" "$installroot\tomcat\bin\startup.bat"
+  CreateShortCut "$SMPROGRAMS\美联美容连锁软件\美联美容.lnk" "$installroot\tomcat\bin\startup.bat"  \
+  "some command line parameters" "$installroot\\config\\sys.ico" 0 SW_SHOWNORMAL \
+  ALT|CONTROL|SHIFT|F5 "a description"
+
+  CreateShortCut "$DESKTOP\美联美容.lnk" "$installroot\tomcat\bin\startup.bat"  \
+  "some command line parameters" "$installroot\\config\\sys.ico" 0 SW_SHOWNORMAL \
+  ALT|CONTROL|SHIFT|F5 "a description"
+
   SetOutPath   "$installroot"
-  ;CreateShortCut "$SMPROGRAMS\美联美容连锁软件\Uninstall.lnk" "$installroot\uninst.exe"
+  CreateShortCut "$SMPROGRAMS\美联美容连锁软件\Uninstall.lnk" "$installroot\uninst.exe"
 
 SectionEnd
-
-
 
 
 ;//写入注册表系统信息
