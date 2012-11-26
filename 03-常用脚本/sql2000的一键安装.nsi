@@ -243,7 +243,7 @@ Section "clear_remove_mssql_folder"
 	over:
 
 	;É¾³ýÎÄ¼þ¼Ð $9 "C:\Program Files (x86)\Microsoft SQL Server\"
- 	RMDir /r /REBOOTOK $9
+ 	RMDir /r $9
 
  	Delete $WINDIR\sqlstp.log
   Delete $WINDIR\sqlsp.log

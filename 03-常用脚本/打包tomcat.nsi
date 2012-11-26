@@ -142,6 +142,8 @@ FunctionEnd
 Var serviceName
 Function "startSQLServer"
 	StrCpy $serviceName "MSSQLSERVER"
+
+	Call readReg
 	StrCmp $has "true" is0 other0
 	is0:
 	  ;DetailPrint "已经安装了SQL Server"
@@ -189,6 +191,10 @@ Var  pri_result
 ;打开数据库连接
 Var  openresult
 Function "openConn"
+
+	;尝试启动数据库
+
+
   ;$Text_State 密码
     ;连接数据库
 	${OLEDB}::SQL_Logon  "localhost"  "sa" "$Text_State" ;"0" Success, "1" Failure
@@ -406,6 +412,8 @@ Function nsDialogsPageLeave
 
 	;MessageBox MB_OK "$Text_State"
 
+	;尝试启动数据库
+  Call startSQLServer
 	;验证是否能够连接数据库
   Call OpenConn
 	StrCmp $openresult "true" connright connerr
