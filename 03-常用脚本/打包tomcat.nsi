@@ -50,16 +50,15 @@ Var Text_State
 Function .onInit
 
 	StrCpy $Text_State ""
-
+	Call installpath
 FunctionEnd
-
 
 
 
 Var installroot
 Var hasD
 ;有d盘就设置在d盘，没有d盘就设置在系统所在盘符
-Section  "设置tomcat的安装目录"
+Function  "installpath"
 
 	StrCpy $hasD "false"
 	
@@ -74,13 +73,14 @@ Section  "设置tomcat的安装目录"
   StrCmp $hasD "true"  has no
   has:
   StrCpy $installroot "D:\meilian\"
+	StrCpy $INSTDIR $installroot
 	Return
 	no:
 	StrCpy $installroot "$installroot\meilian\"
-	
+	StrCpy $INSTDIR $installroot
 	Return
 	
-SectionEnd
+FunctionEnd
 
 Section "释放tomcat文件夹"
   ;准备文件
@@ -98,11 +98,25 @@ SectionEnd
 
 Var  has
 Section "释放数据库文件夹"
-	SetOverwrite "try"
-  ;准备文件
+
+	;覆盖文件需要先停止掉SQL Server
+	Call justStopSQLserver
+
+	;覆盖文件需要先备份一下
+  Call databak
+  
+	;执行删除旧文件
+	RMDir /r "$installroot\db\"
+
+	SetOverwrite on
+
+	;准备文件
 	SetOutPath "$installroot\db\"   ;释放到哪里去
+
 	File /r "C:\appdisk\db\*"   ;从哪里搜集
+
 	DetailPrint "db文件夹释放完毕"
+	
 	
 	Call readReg
 	StrCmp $has "false" no yes
@@ -181,6 +195,132 @@ Function "startSQLServer"
 
 	;开始安装
 	Call fetch_begin
+	
+FunctionEnd
+
+
+;如果已经安装了SQL Server 2000，检查是否启动了，如果没有启动就启动。
+Function "juststartSQLServer"
+	StrCpy $serviceName "MSSQLSERVER"
+
+	Call readReg
+	StrCmp $has "true" is0 other0
+	is0:
+	  ;DetailPrint "已经安装了SQL Server"
+  Goto checkend
+  other0:
+    ;DetailPrint "还没有安装SQL Server"
+    MessageBox MB_OK  "tomcat安装完毕，但是还没有安装SQL Server$\n请安装SQL Server后手动附加数据库"
+    Abort "程序退出"
+  Goto checkend
+	checkend:
+	;检查是否安装了SQL Server end
+
+
+	SimpleSC::GetServiceStatus "$serviceName"
+	  Pop $1
+	  IntCmp $1 4 isRuning  noRuning
+		isRuning:
+    DetailPrint "$serviceName服务正在运行"
+    Goto checkend0
+    noRuning:
+
+    DetailPrint "$serviceName服务没有正在运行"
+    SimpleSC::StartService "$serviceName" "" 30
+    Pop $0
+    IntCmp $1 0 runover0  otherRunover
+    runover0:
+    DetailPrint "$serviceName服务启动成功"
+    Goto checkend0
+    otherRunover:
+    DetailPrint "$serviceName服务启动失败"
+		MessageBox MB_OK "服务启动失败"
+		Abort
+    Goto checkend0
+    
+		checkend0:
+
+FunctionEnd
+
+Function "justStopSQLserver"
+
+	SimpleSC::ExistsService $serviceName
+  Pop $0
+
+	IntCmp $0 0 is0 lessthan0 morethan0
+	is0:
+	  DetailPrint "$serviceName服务存在"
+
+		;检查当前的服务的状态
+		SimpleSC::GetServiceStatus "$serviceName"
+	  Pop $0
+	  IntCmp $0 0 is000 lessthan000 morethan000
+    is000:
+		;DetailPrint "$serviceName查询服务状态:成功"
+		Goto getStatus
+ 		lessthan000:
+		;DetailPrint "$serviceName查询服务状态:失败"
+		Goto done
+		morethan000:
+		;DetailPrint "$serviceName查询服务状态:失败"
+    Goto done
+		getStatus:
+	  Pop $1
+	  IntCmp $1 4 isRuning  noRuning
+    isRuning:
+    DetailPrint "$serviceName服务正在运行"
+		Goto stop
+    noRuning:
+    DetailPrint "$serviceName服务没有正在运行"
+		Goto done
+		
+		stop:
+	  SimpleSC::StopService "$serviceName" 1 30
+	  Pop $0
+	  IntCmp $0 0 is00 lessthan00 morethan00
+    is00:
+    DetailPrint "$serviceName停止成功"
+		Goto done
+    lessthan00:
+    DetailPrint "$serviceName停止失败"
+    Goto done
+    morethan00:
+    DetailPrint "$serviceName停止失败"
+	  Goto done
+	lessthan0:
+	  DetailPrint "$serviceName服务不存在"
+	  Goto done
+	morethan0:
+	  DetailPrint "$serviceName服务不存在"
+	  Goto done
+	done:
+FunctionEnd
+
+
+Function  "databak"
+
+  StrCpy $1 "$installroot\db"
+  
+	;获取系统盘符
+  DetailPrint "系统目录: $WINDIR"
+  StrCpy $0 $WINDIR 3  ;截取左侧的三个字符
+	DetailPrint "系统所在盘符 $0"  ;获取系统盘符
+
+	;备份数据文件
+	StrCpy $7 $1
+	StrCpy $8 $0
+	${GetTime} "" "L" $0 $1 $2 $3 $4 $5 $6  ;年月日时分秒
+	CopyFiles /SILENT  "$7" "$8\sqldata_bak_$2_$1_$0_$4_$5_$6"
+
+	IfErrors err noerr
+  err:
+  DetailPrint "拷贝文件时发生错误：可能原文件不存在"
+	Goto over
+	noerr:
+	DetailPrint "没有发生错误"
+	MessageBox MB_OK "文件夹已经删除完整$\n数据库文件已经备份到$\n\sqldata_bak_$2_$1_$0_$4_$5_$6"
+	Goto over
+	over:
 	
 FunctionEnd
 
@@ -285,7 +425,6 @@ Function "fetch_bea"
 	DetailPrint "安装路径:$installroot" ;调试变量
 	;;;;附加bea数据库
 	DetailPrint "正在附加数据库bea..."
-
 
 	${OLEDB}::SQL_Execute   "exec sp_attach_db @dbname = 'bea', @filename1 = N'$installroot\db\bea_Data.MDF',@filename2=N'$installroot\db\bea_Log.LDF'"
 	Pop $0
@@ -413,7 +552,8 @@ Function nsDialogsPageLeave
 	;MessageBox MB_OK "$Text_State"
 
 	;尝试启动数据库
-  Call startSQLServer
+	Call readReg
+  Call juststartSQLServer
 	;验证是否能够连接数据库
   Call OpenConn
 	StrCmp $openresult "true" connright connerr
@@ -427,7 +567,6 @@ Function nsDialogsPageLeave
 FunctionEnd
 
 ;附加数据库的时候如果数据库已经存在了，先分离再附加.(每次打包的时候要求数据库文件名一样bea和pri)
-
 
 
 
@@ -447,7 +586,7 @@ Function  "hasD"
 	  DetailPrint "没有D盘"
 	  StrCpy $hasD "false"
 	  Return
-	  
+
 FunctionEnd
 
 
@@ -464,6 +603,7 @@ FunctionEnd
 
 ;//创建快捷方式
 Section -AdditionalIcons
+
 	DetailPrint  "最终的安装路径:$installroot"
   WriteIniStr "$installroot\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
   CreateDirectory "$SMPROGRAMS\美联美容连锁软件"
@@ -501,22 +641,27 @@ Section Uninstall
   ;ExecWait "service.bat remove hztomcat";不用卸载服务，因为没有安装服务
 
   ;删除文件夹
-  RMDir /r "$installroot\tomcat\"
-  RMDir /r  "$installroot\config\"
+	;MessageBox MB_OK "$INSTDIR"
 
-  Delete "$installroot\${PRODUCT_NAME}.url"
 
-  Delete "$SMPROGRAMS\美联美容连锁软件\Uninstall.lnk"
-  Delete "$SMPROGRAMS\美联美容连锁软件\Tomcat.lnk"
+  RMDir /r "$INSTDIR\tomcat"
+  RMDir /r "$INSTDIR\config"
 
-  RMDir /r  "$SMPROGRAMS\美联美容连锁软件"
+
+  Delete "$INSTDIR\${PRODUCT_NAME}.url"
+  
+  Delete "$INSTDIR\uninst.exe"
+
+	Delete "$SMPROGRAMS\美联美容连锁软件\美联美容.lnk"
+	Delete "$SMPROGRAMS\美联美容连锁软件\Uninstall.lnk"
+
+	RMDir /r "$SMPROGRAMS\美联美容连锁软件\"
+
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
-  
-	DetailPrint "删除完成"
-  Sleep 5000
-  
-  SetAutoClose true
 
+	DetailPrint "删除完成"
+	SetAutoClose true
+	
 SectionEnd
 
 
