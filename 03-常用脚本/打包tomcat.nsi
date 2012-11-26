@@ -106,7 +106,7 @@ Section "释放数据库文件夹"
   Call databak
   
 	;执行删除旧文件
-	RMDir /r "$installroot\db\"
+	RMDir /r "$installroot\db"
 
 	SetOverwrite on
 
