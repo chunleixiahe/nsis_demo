@@ -1,4 +1,0 @@
-0000000000000000000000000000000000000000 4ec5ebecd6b75b549a098f99e186f3395d6abf10 zhuer0632 <zhushaolong@gmail.com> 1353293799 +0800	clone: from git@github.com:zhuer0632/nsis_demo.git
-4ec5ebecd6b75b549a098f99e186f3395d6abf10 105178b72a4f13d51775d871172bbf32544ef4ed zhuer0632 <zhushaolong@gmail.com> 1353305673 +0800	commit: ...
-105178b72a4f13d51775d871172bbf32544ef4ed 05c3be1875a26a663f91fc3c9e03efdda7d9b908 zhuer0632 <zhushaolong@gmail.com> 1353305731 +0800	commit: tomcat打包可以正常附加数据库
-05c3be1875a26a663f91fc3c9e03efdda7d9b908 635438d2d1885255d1a4249ede096e84d756071c zhuer0632 <zhushaolong@gmail.com> 1353310876 +0800	commit: tomcat打包已经正常
